@@ -31,7 +31,7 @@ do
         FAN_SPEED=`nvidia-smi -i $i --query-gpu=fan.speed --format=csv,noheader,nounits`
 
         #Default value for low temperature
-        TARGET_FUN_SPEED=30 
+        TARGET_FUN_SPEED=0 
 
         echo "GPU$i T=$GPU_TEMP and F=$FAN_SPEED"
         
@@ -42,16 +42,20 @@ do
 	fi
 
         # Check temperature and decied target fan speed
-        if ([ $GPU_TEMP -ge 50 ]) then
+        if ([ $GPU_TEMP -ge 55 ]) then
             if ([ $GPU_TEMP -ge 70 ]) then
                 TARGET_FUN_SPEED=100
-            else
-                TARGET_FUN_SPEED=80
+	    elif ([ $GPU_TEMP -ge 63 ] && [ $GPU_TEMP -le 68 ]) then
+		TARGET_FUN_SPEED=80
+            elif ([ $GPU_TEMP -ge 55 ] && [ $GPU_TEMP -le 61 ]) then
+                TARGET_FUN_SPEED=60
             fi
+	elif ([ $GPU_TEMP -le 50 ]) then
+	    TARGET_FUN_SPEED=30
         fi
 
         # Set new fan speed if it is diffrenet from current
-        if ([ $FAN_SPEED -ne $TARGET_FUN_SPEED ]) then 
+        if ([ $TARGET_FUN_SPEED -ne 0 ] && [ $FAN_SPEED -ne $TARGET_FUN_SPEED ]) then 
             echo "Setting FunSpeed to $TARGET_FUN_SPEED"
             $NS -a [gpu:$i]/GPUFanControlState=1 -a [fan:$i]/GPUTargetFanSpeed=$TARGET_FUN_SPEED > /dev/null 2>&1
         fi
